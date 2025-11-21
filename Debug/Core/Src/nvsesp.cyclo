@@ -1,0 +1,11 @@
+../Core/Src/nvsesp.c:20:5:nvsesp_parseVersionJson	6
+../Core/Src/nvsesp.c:50:16:nvsesp_httpRequest	9
+../Core/Src/nvsesp.c:321:16:nvsesp_sendAtCommand	10
+../Core/Src/nvsesp.c:380:6:HAL_UARTEx_RxEventCallback	2
+../Core/Src/nvsesp.c:407:6:nvsesp_extractJsonBody	36
+../Core/Src/nvsesp.c:483:6:nvsesp_jsonFindString	4
+../Core/Src/nvsesp.c:497:13:nvsesp_joinFeed	19
+../Core/Src/nvsesp.c:535:6:nvsesp_apModeGetData	7
+../Core/Src/nvsesp.c:584:6:nvsesp_apModeGetDataInit	1
+../Core/Src/nvsesp.c:591:6:log_ascii_chunked	6
+../Core/Src/nvsesp.c:613:6:log_hex_chunked	4

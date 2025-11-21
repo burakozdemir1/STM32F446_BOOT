@@ -1,0 +1,5 @@
+../Core/Src/esp8266_comm.c:22:17:GetSectorFromAddress	16	static
+../Core/Src/esp8266_comm.c:35:10:ESP8266_GetFirmwareMetadata	3264	static
+../Core/Src/esp8266_comm.c:114:15:Flash_Write	88	static
+../Core/Src/esp8266_comm.c:180:10:ESP8266_RequestFirmware	3528	static
+../Core/Src/esp8266_comm.c:306:10:ESP8266_CalculateCRC	32	static

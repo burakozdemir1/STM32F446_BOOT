@@ -1,0 +1,5 @@
+../Core/Src/nvsdatabase.c:23:22:nvsdatabase_flashWriteCharData	14
+../Core/Src/nvsdatabase.c:101:15:nvsdatabase_flashReadCharData	12
+../Core/Src/nvsdatabase.c:164:13:nvsesp_jsonFindString	12
+../Core/Src/nvsdatabase.c:194:13:nvsesp_parseJsonCredentials	6
+../Core/Src/nvsdatabase.c:220:15:nvsdatabase_validate	9
