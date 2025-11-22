@@ -16,8 +16,8 @@
 #define WIFI_SSID     "TP-Link_E7D0"
 #define WIFI_PASS     "52227929"
 
-#define APP_START_ADDRESS   0x08020000U    /* Sector 5 başlangıcı */
-#define APP_END_ADDRESS     0x08060000U    /* Sector 6 sonu + 1 (exclusive) */
+#define APP_START_ADDRESS   0x08020000U
+#define APP_END_ADDRESS     0x08060000U
 typedef enum {
     FLASH_OK = 0,
     FLASH_ERROR,
@@ -90,15 +90,11 @@ typedef struct
 }ESP_Handle_t;
 
 
-ESP_Boot MQTT_ConnectToBroker(char *Ip ,char *Port);
 ESP_Boot ESP8266_Reset(void);
 ESP_Boot ESP8266_Calibration(void);
 ESP_Boot ESP8266_WiFiConnection(void);
 ESP_Boot ESP8266_ServerConnection(void);
 ESP_Boot ESP8266_GetFirmwareMetadata(uint16_t *blocks);
-ESP_Boot MQTT_Subscribe(char *topic);
-ESP_Boot MQTT_Publish(char *topic, char *message);
-
 
 ESP_Boot ESP8266_RequestFirmware(uint16_t *totalBlocks);
 

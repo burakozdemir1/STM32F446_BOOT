@@ -13,18 +13,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NS_AP_WIFI_SSID     	"NVISE SOAP DISPENSER"
-#define NS_AP_WIFI_PASS     	"12345678"
+
 #define NS_AP_UART_DMA_RX_SIZE   (1024)
 #define NS_AP_LOG_COPY_MAX       (1024)
 
-
-#define BROKER_HOST      "52.29.86.137"  // örnek broker; kendi broker’ını yaz
-#define BROKER_PORT      1883
-
-#define MQTT_CLIENT_ID   "NVS-00123"
-#define MQTT_PUB_TOPIC   "stm32/demo"
-//NVS_ESP_AP_MODE apModeGetData;
 
 typedef enum {
 
@@ -93,7 +85,6 @@ typedef struct
 } NVS_ESP_HANDLE;
 
 typedef struct {
-    /* ... mevcut alanlar ... */
     uint8_t  RxData[NS_AP_UART_DMA_RX_SIZE];
     char     g_log_buf[NS_AP_LOG_COPY_MAX];
     volatile bool g_rx_ready;
@@ -101,22 +92,18 @@ typedef struct {
 
     char     jsonBuf[256];
     uint8_t rxBuffer[2048];
-    // SSID/Password ve bayrak
     char     ssid[32];
     char     password[64];
     bool     ssidPassFound;
 
-    // Join (CWJAP) durum takibi
     bool     joinPending;
     bool     joinSuccess;
     bool     joinFailed;
     uint32_t joinStartTick;
 
-    // Join sırasında parçalı metinleri biriktirmek için küçük buffer
     char     joinBuf[256];
     uint16_t joinBufLen;
 
-    // (opsiyonel) aktif link takibi
     uint8_t  activeLinkId;
     bool     hasActiveLink;
     bool     internetConnectCheck;
@@ -134,13 +121,6 @@ int nvsesp_parseVersionJson(const char *rxBuffer);
 NVS_ESP_STATUS nvsesp_sendApAck(void);
 NVS_ESP_STATUS nvsesp_init(void);
 extern NVS_ESP_AP_MODE apModeGetData;
-//extern uint16_t totalBlocks;
-
-
-
-
-
-
 
 
 

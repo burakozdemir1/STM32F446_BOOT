@@ -43,7 +43,6 @@ nv_cfg_result_t nv_cfg_set_version(nv_cfg_ctx_t *ctx, uint32_t new_version)
 #ifdef STM32F4xx
 static uint32_t nv_flash_addr_to_sector(uint32_t addr)
 {
-    /* STM32F446RE iç flash sector haritası:
      * Sector 0: 0x0800 0000 - 0x0800 3FFF (16 KB)
      * Sector 1: 0x0800 4000 - 0x0800 7FFF (16 KB)
      * Sector 2: 0x0800 8000 - 0x0800 BFFF (16 KB)
@@ -63,7 +62,7 @@ static uint32_t nv_flash_addr_to_sector(uint32_t addr)
     else if (addr < 0x08060000) return FLASH_SECTOR_6;
     else if (addr < 0x08080000) return FLASH_SECTOR_7;
 
-    return 0xFFFFFFFFu; /* Geçersiz adres */
+    return 0xFFFFFFFFu;
 }
 #endif
 
@@ -78,7 +77,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
         return r;
     }
 
-    /* ---- Flash Area ---- */
     logInfo("CFG region:  [0x%08lX .. 0x%08lX) slot_size=0x%08lX\r\n",
                  (unsigned long)ctx.base_addr,
                  (unsigned long)ctx.end_addr,
@@ -93,7 +91,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
     } else {
     	logInfo("CFG active: NO VALID SLOT (first-time/defaults)\r\n");
     }
-    /* ---- SSID + PASS ---- */
     char ssid[NV_SSID_MAX_LEN] = {0};
     uint8_t pass[NV_PASS_MAX_LEN] = {0};
     uint16_t pass_len = 0;
@@ -107,18 +104,15 @@ nv_cfg_result_t nv_cfg_load_globals(void)
     if (pass_len) memcpy(g_nv_cfg.pass, pass, pass_len);
     g_nv_cfg.pass_len = pass_len;
 
-    /* ---- SERIAL ---- */
     char serial[NV_SERIAL_MAX_LEN] = {0};
     (void)nv_cfg_get_serial(&ctx, serial);
     memset(g_nv_cfg.serial, 0, NV_SERIAL_MAX_LEN);
     strncpy(g_nv_cfg.serial, serial, NV_SERIAL_MAX_LEN - 1);
 
-    /* ---- FIRST-ONLINE FLAG ---- */
     bool f = false;
     (void)nv_cfg_get_first_online_flag(&ctx, &f);
     g_nv_cfg.first_online_flag = f;
 
-    /* ---- VERSION ---- */
     uint32_t v = 0;
     (void)nv_cfg_get_version(&ctx, &v);
     g_nv_cfg.version = v;
@@ -151,7 +145,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
 
         char pass_mask[32];
         if (g_nv_cfg.pass_len == 0) {
-            // boş
             pass_mask[0] = '('; pass_mask[1] = 'e'; pass_mask[2] = 'm'; pass_mask[3] = 'p';
             pass_mask[4] = 't'; pass_mask[5] = 'y'; pass_mask[6] = ')'; pass_mask[7] = '\0';
         } else if (g_nv_cfg.pass_len >= 4) {
@@ -200,7 +193,6 @@ nv_cfg_result_t nv_cfg_set_first_online_flag_and_commit(bool flag)
 
 nv_cfg_result_t nv_cfg_save_wifi_and_reload_globals(const char *ssid, const char *password)
 {
-    /* ---- Parametre kontrolü ---- */
     logInfo("save_wifi: called (ssid=%s, pass_ptr=%p)\r\n",
             ssid ? ssid : "(null)", (void*)password);
 
@@ -209,7 +201,6 @@ nv_cfg_result_t nv_cfg_save_wifi_and_reload_globals(const char *ssid, const char
         return NV_CFG_ERR_INVALID_PARAM;
     }
 
-    /* ---- Uzunluk kontrolü ---- */
     size_t ssid_len = strnlen(ssid, NV_SSID_MAX_LEN);
     size_t pass_len = strnlen(password, NV_PASS_MAX_LEN);
 
@@ -227,7 +218,6 @@ nv_cfg_result_t nv_cfg_save_wifi_and_reload_globals(const char *ssid, const char
         return NV_CFG_ERR_INVALID_PARAM;
     }
 
-    /* ---- Context init ---- */
     nv_cfg_ctx_t ctx;
     nv_cfg_result_t r = nv_cfg_init(&ctx);
     if (r != NV_CFG_OK) {
@@ -246,14 +236,12 @@ nv_cfg_result_t nv_cfg_save_wifi_and_reload_globals(const char *ssid, const char
             (unsigned long)ctx.active_seq,
             (unsigned)ctx.active_valid);
 
-    /* ---- Yeni SSID + PASS yaz ---- */
     r = nv_cfg_set_wifi(&ctx, ssid, (const uint8_t*)password, (uint16_t)pass_len);
     if (r != NV_CFG_OK) {
         logInfo("save_wifi: set_wifi failed (%d)\r\n", r);
         return r;
     }
 
-    /* Debug: RAM’deki kayıt içeriğini özetle */
     logInfo("save_wifi: ctx.rec.ssid=\"%s\" pass_len=%u seq=%lu magic=0x%08lX ver=%u len=%u\r\n",
             ctx.rec.ssid,
             (unsigned)ctx.rec.pass_len,
@@ -262,16 +250,14 @@ nv_cfg_result_t nv_cfg_save_wifi_and_reload_globals(const char *ssid, const char
             (unsigned)ctx.rec.version,
             (unsigned)ctx.rec.length);
 
-    /* ---- Flash'a commit ---- */
     logInfo("save_wifi: calling nv_cfg_commit...\r\n");
     r = nv_cfg_commit(&ctx);
     logInfo("save_wifi: nv_cfg_commit result=%d\r\n", r);
     if (r != NV_CFG_OK) {
         logInfo("save_wifi: commit failed (%d)\r\n", r);
-        return r;   /* Burada şu an F446'da 4 (NV_CFG_ERR_FLASH_OP) görüyorsun */
+        return r;
     }
 
-    /* ---- Globals yeniden yükle ---- */
     logInfo("save_wifi: calling nv_cfg_load_globals...\r\n");
     r = nv_cfg_load_globals();
     logInfo("save_wifi: nv_cfg_load_globals result=%d\r\n", r);
@@ -280,7 +266,6 @@ nv_cfg_result_t nv_cfg_save_wifi_and_reload_globals(const char *ssid, const char
         return r;
     }
 
-    /* ---- Doğrulama ---- */
     if (strncmp(g_nv_cfg.ssid, ssid, NV_SSID_MAX_LEN) != 0 ||
         g_nv_cfg.pass_len != (uint16_t)pass_len ||
         (g_nv_cfg.pass_len && memcmp(g_nv_cfg.pass, password, pass_len) != 0)) {
@@ -294,7 +279,6 @@ nv_cfg_result_t nv_cfg_save_wifi_and_reload_globals(const char *ssid, const char
         return NV_CFG_ERR_CRC_MISMATCH;
     }
 
-    /* ---- Log: NVM'e yazılan değerler ---- */
     char pass_log[NV_PASS_MAX_LEN + 1];
     uint16_t pl = g_nv_cfg.pass_len;
     if (pl > NV_PASS_MAX_LEN) pl = NV_PASS_MAX_LEN;
@@ -399,7 +383,6 @@ static void select_active_slot(nv_cfg_ctx_t *ctx)
     }
 }
 
-/* === Public API === */
 nv_cfg_result_t nv_cfg_init(nv_cfg_ctx_t *ctx)
 {
 	logInfo("CFG base=0x%08lX end=0x%08lX slot_size=0x%08lX\r\n",
@@ -511,18 +494,6 @@ static nv_cfg_result_t flash_erase_page(uint32_t addr)
     uint32_t                sector_error = 0;
     uint32_t                sector = 0;
 
-    /* ---- Adres -> Sector eşlemesi (RM0390 Tablo 4) ----
-     *
-     * Sector 0: 0x0800 0000 - 0x0800 3FFF (16 KB)
-     * Sector 1: 0x0800 4000 - 0x0800 7FFF (16 KB)
-     * Sector 2: 0x0800 8000 - 0x0800 BFFF (16 KB)
-     * Sector 3: 0x0800 C000 - 0x0800 FFFF (16 KB)
-     * Sector 4: 0x0801 0000 - 0x0801 FFFF (64 KB)
-     * Sector 5: 0x0802 0000 - 0x0803 FFFF (128 KB)
-     * Sector 6: 0x0804 0000 - 0x0805 FFFF (128 KB)
-     * Sector 7: 0x0806 0000 - 0x0807 FFFF (128 KB)
-     */
-
     if      (addr < 0x08004000) sector = FLASH_SECTOR_0;
     else if (addr < 0x08008000) sector = FLASH_SECTOR_1;
     else if (addr < 0x0800C000) sector = FLASH_SECTOR_2;
@@ -541,10 +512,10 @@ static nv_cfg_result_t flash_erase_page(uint32_t addr)
 
     memset(&erase, 0, sizeof(erase));
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
-    erase.Banks        = FLASH_BANK_1;              /* F446RE tek bank */
+    erase.Banks        = FLASH_BANK_1;
     erase.Sector       = sector;
     erase.NbSectors    = 1;
-    erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;     /* 2.7V - 3.6V */
+    erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
 
     HAL_FLASH_Unlock();
     st = HAL_FLASHEx_Erase(&erase, &sector_error);
@@ -598,7 +569,6 @@ nv_cfg_result_t nv_cfg_commit(nv_cfg_ctx_t *ctx)
         return NV_CFG_ERR_INVALID_PARAM;
     }
 
-    /* Aktif slot A ise hedef B, aktif B ise hedef A */
     uint32_t target = (ctx->active_slot_addr == ctx->slotA_addr) ?
                       ctx->slotB_addr : ctx->slotA_addr;
 
@@ -620,7 +590,6 @@ nv_cfg_result_t nv_cfg_commit(nv_cfg_ctx_t *ctx)
             (unsigned)tmp.length,
             (unsigned long)tmp.crc32);
 
-    /* 1) Sector erase */
     nv_cfg_result_t er = flash_erase_page(target);
     logInfo("CFG commit: erase result=%d\r\n", er);
     if (er != NV_CFG_OK) {
@@ -628,15 +597,12 @@ nv_cfg_result_t nv_cfg_commit(nv_cfg_ctx_t *ctx)
         return er;
     }
 
-    /* 2) Program */
     nv_cfg_result_t pr = flash_program(target, &tmp, sizeof(nv_cfg_record_t));
     logInfo("CFG commit: prog result=%d\r\n", pr);
     if (pr != NV_CFG_OK) {
         logInfo("CFG commit: PROGRAM FAILED\r\n");
         return pr;
     }
-
-    /* 3) Verify */
     nv_cfg_record_t verify;
     flash_read(target, &verify, sizeof(nv_cfg_record_t));
     if (memcmp(&tmp, &verify, sizeof(nv_cfg_record_t)) != 0) {

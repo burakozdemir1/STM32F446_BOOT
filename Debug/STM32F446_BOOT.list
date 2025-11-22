@@ -35,17 +35,17 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  15 .debug_rnglists 000008a5  00000000  00000000  0001ccd8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  00022974  00000000  00000000  0001d57d  2**0
+ 16 .debug_macro  00022950  00000000  00000000  0001d57d  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000feb9  00000000  00000000  0003fef1  2**0
+ 17 .debug_line   0000feb1  00000000  00000000  0003fecd  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    000cadf0  00000000  00000000  0004fdaa  2**0
+ 18 .debug_str    000cad4b  00000000  00000000  0004fd7e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  0011ab9a  2**0
+ 19 .comment      00000043  00000000  00000000  0011aac9  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000035a8  00000000  00000000  0011abe0  2**2
+ 20 .debug_frame  000035a8  00000000  00000000  0011ab0c  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 0000004b  00000000  00000000  0011e188  2**0
+ 21 .debug_line_str 0000004b  00000000  00000000  0011e0b4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1967,7 +1967,6 @@ int main(void)
  8001132:	b2db      	uxtb	r3, r3
  8001134:	2b00      	cmp	r3, #0
  8001136:	d024      	beq.n	8001182 <main+0x21e>
-	            /* HTTP yanıt imzası gördüysek “internete bağlandı�? sayıyoruz */
 	            if (strstr((char*)espWifi.rxBuffer, "HTTP/1.1") ||
  8001138:	f507 7390 	add.w	r3, r7, #288	@ 0x120
  800113c:	3302      	adds	r3, #2
@@ -2006,8 +2005,6 @@ int main(void)
  800117a:	e002      	b.n	8001182 <main+0x21e>
 	                }
 	            } else {
-	                /* Wi-Fi + TCP oldu ama HTTP görmedikse daha katı davranmak istersen
-	                   burayı değiştirebilirsin. �?imdilik flag’i bekletelim. */
 	            	logInfo("First online not confirmed by HTTP.\r\n");
  800117c:	485c      	ldr	r0, [pc, #368]	@ (80012f0 <main+0x38c>)
  800117e:	f001 fc03 	bl	8002988 <logInfo>
@@ -2097,7 +2094,6 @@ int main(void)
  800120c:	4603      	mov	r3, r0
  800120e:	2b00      	cmp	r3, #0
  8001210:	d108      	bne.n	8001224 <main+0x2c0>
-	                /* RAM globali güncelle */
 	                nv_cfg_load_globals();
  8001212:	f000 fa4d 	bl	80016b0 <nv_cfg_load_globals>
 	                logInfo("Version updated in flash: %lu\r\n",
@@ -2132,16 +2128,15 @@ int main(void)
 		bootloader_jump_to_user_application();
  8001240:	f7ff fe5e 	bl	8000f00 <bootloader_jump_to_user_application>
  8001244:	e022      	b.n	800128c <main+0x328>
-//		printMessage("BL DEBUG: Jumping App Code.\n");
-//		bootloader_jump_to_user_application();
-//	}
+
+	}
+
 
 	else {
 		logInfo("Wifi Fail\n");
  8001246:	4834      	ldr	r0, [pc, #208]	@ (8001318 <main+0x3b4>)
  8001248:	f001 fb9e 	bl	8002988 <logInfo>
 
-	    /* Eğer cihaz daha önce hiç internete çıkmadıysa → AP moduna gir (ilk kurulum zorunlu) */
 	    if (!g_nv_cfg.first_online_flag) {
  800124c:	4b15      	ldr	r3, [pc, #84]	@ (80012a4 <main+0x340>)
  800124e:	f893 3072 	ldrb.w	r3, [r3, #114]	@ 0x72
@@ -2165,9 +2160,7 @@ int main(void)
  800127a:	f001 fb69 	bl	8002950 <nvsesp_apModeGetDataInit>
  800127e:	e005      	b.n	800128c <main+0x328>
 
-	        /* Not: İlk kurulumda internete bağlanana kadar APP’e zıplamıyoruz. */
 	    } else {
-	        /* Cihaz daha önce internete çıkmış → offline devam etmeye izin ver */
 	    	logInfo("Offline mode allowed (first_online_flag=1). Jumping app.\n");
  8001280:	4828      	ldr	r0, [pc, #160]	@ (8001324 <main+0x3c0>)
  8001282:	f001 fb81 	bl	8002988 <logInfo>
@@ -2879,7 +2872,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
  80016e8:	e22e      	b.n	8001b48 <nv_cfg_load_globals+0x498>
     }
 
-    /* ---- Flash Area ---- */
     logInfo("CFG region:  [0x%08lX .. 0x%08lX) slot_size=0x%08lX\r\n",
                  (unsigned long)ctx.base_addr,
  80016ea:	f8d7 109c 	ldr.w	r1, [r7, #156]	@ 0x9c
@@ -2915,7 +2907,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
  8001720:	48ae      	ldr	r0, [pc, #696]	@ (80019dc <nv_cfg_load_globals+0x32c>)
  8001722:	f001 f931 	bl	8002988 <logInfo>
     }
-    /* ---- SSID + PASS ---- */
     char ssid[NV_SSID_MAX_LEN] = {0};
  8001726:	f507 73c8 	add.w	r3, r7, #400	@ 0x190
  800172a:	f5a3 738a 	sub.w	r3, r3, #276	@ 0x114
@@ -2992,7 +2983,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
  80017da:	4b7c      	ldr	r3, [pc, #496]	@ (80019cc <nv_cfg_load_globals+0x31c>)
  80017dc:	f8a3 2060 	strh.w	r2, [r3, #96]	@ 0x60
 
-    /* ---- SERIAL ---- */
     char serial[NV_SERIAL_MAX_LEN] = {0};
  80017e0:	f507 73c8 	add.w	r3, r7, #400	@ 0x190
  80017e4:	f5a3 73b4 	sub.w	r3, r3, #360	@ 0x168
@@ -3020,7 +3010,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
  8001816:	4873      	ldr	r0, [pc, #460]	@ (80019e4 <nv_cfg_load_globals+0x334>)
  8001818:	f004 ff39 	bl	800668e <strncpy>
 
-    /* ---- FIRST-ONLINE FLAG ---- */
     bool f = false;
  800181c:	f507 73c8 	add.w	r3, r7, #400	@ 0x190
  8001820:	f2a3 1369 	subw	r3, r3, #361	@ 0x169
@@ -3039,7 +3028,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
  8001842:	4b62      	ldr	r3, [pc, #392]	@ (80019cc <nv_cfg_load_globals+0x31c>)
  8001844:	f883 2072 	strb.w	r2, [r3, #114]	@ 0x72
 
-    /* ---- VERSION ---- */
     uint32_t v = 0;
  8001848:	f507 73c8 	add.w	r3, r7, #400	@ 0x190
  800184c:	f5a3 73b8 	sub.w	r3, r3, #368	@ 0x170
@@ -3162,7 +3150,6 @@ nv_cfg_result_t nv_cfg_load_globals(void)
  8001960:	f8b3 3060 	ldrh.w	r3, [r3, #96]	@ 0x60
  8001964:	2b00      	cmp	r3, #0
  8001966:	d14b      	bne.n	8001a00 <nv_cfg_load_globals+0x350>
-            // boş
             pass_mask[0] = '('; pass_mask[1] = 'e'; pass_mask[2] = 'm'; pass_mask[3] = 'p';
  8001968:	f507 73c8 	add.w	r3, r7, #400	@ 0x190
  800196c:	f5a3 73c8 	sub.w	r3, r3, #400	@ 0x190
@@ -3906,7 +3893,6 @@ static void select_active_slot(nv_cfg_ctx_t *ctx)
 
 08001fb8 <nv_cfg_init>:
 
-/* === Public API === */
 nv_cfg_result_t nv_cfg_init(nv_cfg_ctx_t *ctx)
 {
  8001fb8:	b580      	push	{r7, lr}
@@ -4234,10 +4220,6 @@ static nv_cfg_result_t flash_erase_page(uint32_t addr)
     uint32_t                sector = 0;
  80021fc:	2300      	movs	r3, #0
  80021fe:	627b      	str	r3, [r7, #36]	@ 0x24
-     * Sector 5: 0x0802 0000 - 0x0803 FFFF (128 KB)
-     * Sector 6: 0x0804 0000 - 0x0805 FFFF (128 KB)
-     * Sector 7: 0x0806 0000 - 0x0807 FFFF (128 KB)
-     */
 
     if      (addr < 0x08004000) sector = FLASH_SECTOR_0;
  8002200:	687b      	ldr	r3, [r7, #4]
@@ -4329,7 +4311,7 @@ static nv_cfg_result_t flash_erase_page(uint32_t addr)
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
  8002294:	2300      	movs	r3, #0
  8002296:	60fb      	str	r3, [r7, #12]
-    erase.Banks        = FLASH_BANK_1;              /* F446RE tek bank */
+    erase.Banks        = FLASH_BANK_1;
  8002298:	2301      	movs	r3, #1
  800229a:	613b      	str	r3, [r7, #16]
     erase.Sector       = sector;
@@ -4338,7 +4320,7 @@ static nv_cfg_result_t flash_erase_page(uint32_t addr)
     erase.NbSectors    = 1;
  80022a0:	2301      	movs	r3, #1
  80022a2:	61bb      	str	r3, [r7, #24]
-    erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;     /* 2.7V - 3.6V */
+    erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
  80022a4:	2302      	movs	r3, #2
  80022a6:	61fb      	str	r3, [r7, #28]
 
@@ -4536,7 +4518,6 @@ nv_cfg_result_t nv_cfg_commit(nv_cfg_ctx_t *ctx)
  800240a:	e0e7      	b.n	80025dc <nv_cfg_commit+0x210>
     }
 
-    /* Aktif slot A ise hedef B, aktif B ise hedef A */
     uint32_t target = (ctx->active_slot_addr == ctx->slotA_addr) ?
  800240c:	f507 73a4 	add.w	r3, r7, #328	@ 0x148
  8002410:	f5a3 73a2 	sub.w	r3, r3, #324	@ 0x144
@@ -4632,7 +4613,6 @@ nv_cfg_result_t nv_cfg_commit(nv_cfg_ctx_t *ctx)
  80024da:	4845      	ldr	r0, [pc, #276]	@ (80025f0 <nv_cfg_commit+0x224>)
  80024dc:	f000 fa54 	bl	8002988 <logInfo>
 
-    /* 1) Sector erase */
     nv_cfg_result_t er = flash_erase_page(target);
  80024e0:	f8d7 0144 	ldr.w	r0, [r7, #324]	@ 0x144
  80024e4:	f7ff fe84 	bl	80021f0 <flash_erase_page>
@@ -4655,7 +4635,6 @@ nv_cfg_result_t nv_cfg_commit(nv_cfg_ctx_t *ctx)
  800250c:	e066      	b.n	80025dc <nv_cfg_commit+0x210>
     }
 
-    /* 2) Program */
     nv_cfg_result_t pr = flash_program(target, &tmp, sizeof(nv_cfg_record_t));
  800250e:	f107 03a4 	add.w	r3, r7, #164	@ 0xa4
  8002512:	2297      	movs	r2, #151	@ 0x97
@@ -4680,8 +4659,6 @@ nv_cfg_result_t nv_cfg_commit(nv_cfg_ctx_t *ctx)
  800253e:	f897 313e 	ldrb.w	r3, [r7, #318]	@ 0x13e
  8002542:	e04b      	b.n	80025dc <nv_cfg_commit+0x210>
     }
-
-    /* 3) Verify */
     nv_cfg_record_t verify;
     flash_read(target, &verify, sizeof(nv_cfg_record_t));
  8002544:	f107 030c 	add.w	r3, r7, #12
@@ -4800,7 +4777,7 @@ int nvsesp_parseVersionJson(const char *rxBuffer)
  8002632:	330c      	adds	r3, #12
  8002634:	653b      	str	r3, [r7, #80]	@ 0x50
 
-        char versionStr[4] = {0};  // Maks 3 basamaklı versiyon
+        char versionStr[4] = {0};
  8002636:	2300      	movs	r3, #0
  8002638:	64bb      	str	r3, [r7, #72]	@ 0x48
         int i = 0;
@@ -4907,7 +4884,7 @@ NVS_ESP_STATUS nvsesp_sendAtCommand(const char *cmd, uint32_t timeoutMs)
 	uint8_t ATisOK = 0;
  80026ee:	2300      	movs	r3, #0
  80026f0:	f887 3cf6 	strb.w	r3, [r7, #3318]	@ 0xcf6
-	uint8_t failCount = 0; // Eklenen sayaç
+	uint8_t failCount = 0;
  80026f4:	2300      	movs	r3, #0
  80026f6:	f887 3cf5 	strb.w	r3, [r7, #3317]	@ 0xcf5
 	espHandle.timeout = timeoutMs;
@@ -4927,7 +4904,6 @@ NVS_ESP_STATUS nvsesp_sendAtCommand(const char *cmd, uint32_t timeoutMs)
 
 	while (!ATisOK) {
  8002722:	e0bd      	b.n	80028a0 <nvsesp_sendAtCommand+0x1d4>
-		// Eğer 5 denemeden fazla olduysa çık
 		if (failCount >= 5) {
  8002724:	f897 3cf5 	ldrb.w	r3, [r7, #3317]	@ 0xcf5
  8002728:	2b04      	cmp	r3, #4
@@ -5096,7 +5072,7 @@ NVS_ESP_STATUS nvsesp_sendAtCommand(const char *cmd, uint32_t timeoutMs)
  800288c:	f107 0308 	add.w	r3, r7, #8
  8002890:	4618      	mov	r0, r3
  8002892:	f000 f879 	bl	8002988 <logInfo>
-			failCount++; // Başarısız deneme sayısını artır
+			failCount++;
  8002896:	f897 3cf5 	ldrb.w	r3, [r7, #3317]	@ 0xcf5
  800289a:	3301      	adds	r3, #1
  800289c:	f887 3cf5 	strb.w	r3, [r7, #3317]	@ 0xcf5
@@ -5136,7 +5112,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
  80028de:	6078      	str	r0, [r7, #4]
  80028e0:	460b      	mov	r3, r1
  80028e2:	807b      	strh	r3, [r7, #2]
-	/*ISR Fonksiyonlarında Log yapma!!!*/
     if (huart->Instance == USART1)
  80028e4:	687b      	ldr	r3, [r7, #4]
  80028e6:	681b      	ldr	r3, [r3, #0]

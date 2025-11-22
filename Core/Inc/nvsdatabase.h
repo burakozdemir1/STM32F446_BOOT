@@ -17,9 +17,8 @@
 #define NS_DB_SSID_MAX   (32U)
 #define NS_DB_PASS_MAX   (64U)
 #define FLASH_PAGE_SIZE          (2048u)
-/* Son iki sayfayı kullan: Page 62 ve Page 63 */
-#define NS_DB_FLASH_SSID_ADDR    ((uint32_t)0x0801F000)  /* Page 62 başlangıcı */
-#define NS_DB_FLASH_PASS_ADDR    ((uint32_t)0x0801F800)  /* Page 63 başlangıcı (AYRI SAYFA) */
+#define NS_DB_FLASH_SSID_ADDR    ((uint32_t)0x0801F000)
+#define NS_DB_FLASH_PASS_ADDR    ((uint32_t)0x0801F800)
 
 
 typedef enum {
@@ -37,8 +36,8 @@ typedef enum {
 
 typedef struct
 {
-    volatile bool databaseApModeGetJSON;  /* AP tarafı JSON geldiğinde set eder */
-    volatile bool credentialsReady;       /* Parse başarılı olduysa true */
+    volatile bool databaseApModeGetJSON;
+    volatile bool credentialsReady;
 
     char ssid[NS_DB_SSID_MAX + 1];
     char pass[NS_DB_PASS_MAX + 1];

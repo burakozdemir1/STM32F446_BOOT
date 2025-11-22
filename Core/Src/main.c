@@ -112,7 +112,6 @@ void app_test_read_wifi_from_cfg(void)
 
     logInfo("APP READ: g_nv_cfg.pass     = \"%s\"\r\n", pass_plain);
 
-    // Maskeleme isteğe bağlı
     char pass_mask[32];
     if (g_nv_cfg.pass_len == 0) {
         strcpy(pass_mask, "(empty)");
@@ -239,7 +238,6 @@ int main(void)
 			ATisOK = 0;
 
 	        if (!g_nv_cfg.first_online_flag) {
-	            /* HTTP yanıt imzası gördüysek “internete bağlandı�? sayıyoruz */
 	            if (strstr((char*)espWifi.rxBuffer, "HTTP/1.1") ||
 	                strstr((char*)espWifi.rxBuffer, "HTTP/1.0")) {
 	                if (nv_cfg_set_first_online_flag_and_commit(true) == NV_CFG_OK) {
@@ -248,8 +246,6 @@ int main(void)
 	                	logInfo("First online flag commit FAILED\r\n");
 	                }
 	            } else {
-	                /* Wi-Fi + TCP oldu ama HTTP görmedikse daha katı davranmak istersen
-	                   burayı değiştirebilirsin. �?imdilik flag’i bekletelim. */
 	            	logInfo("First online not confirmed by HTTP.\r\n");
 	            }
 	        }
@@ -279,7 +275,6 @@ int main(void)
 	    if (nv_cfg_init(&ctx) == NV_CFG_OK) {
 	        if (nv_cfg_set_version(&ctx, server_version) == NV_CFG_OK) {
 	            if (nv_cfg_commit(&ctx) == NV_CFG_OK) {
-	                /* RAM globali güncelle */
 	                nv_cfg_load_globals();
 	                logInfo("Version updated in flash: %lu\r\n",
 	                             (unsigned long)g_nv_cfg.version);
@@ -297,25 +292,17 @@ int main(void)
 
 	}
 
-//	if(g_nv_cfg.first_online_flag)
-//	{
-//		printMessage("BL DEBUG: Jumping App Code.\n");
-//		bootloader_jump_to_user_application();
-//	}
 
 	else {
 		logInfo("Wifi Fail\n");
 
-	    /* Eğer cihaz daha önce hiç internete çıkmadıysa → AP moduna gir (ilk kurulum zorunlu) */
 	    if (!g_nv_cfg.first_online_flag) {
 	        nvsesp_sendAtCommand("AT+CIPMUX=1", 2500);
 	        nvsesp_sendAtCommand("AT+CIPDINFO=1", 2000);
 	        nvsesp_sendAtCommand("AT+CIPSERVER=1,80", 2000);
 	        nvsesp_apModeGetDataInit();
 
-	        /* Not: İlk kurulumda internete bağlanana kadar APP’e zıplamıyoruz. */
 	    } else {
-	        /* Cihaz daha önce internete çıkmış → offline devam etmeye izin ver */
 	    	logInfo("Offline mode allowed (first_online_flag=1). Jumping app.\n");
 	        bootloader_jump_to_user_application();
 	    }

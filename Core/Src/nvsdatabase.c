@@ -26,32 +26,25 @@ static NVS_DB_STATUS nvsdatabase_flashWriteCharData(uint32_t address, const char
         return NS_DB_STATUS_FAIL;
     }
 
-    if ((address & 0x1u) != 0u) { // half-word alignment kontrolü
+    if ((address & 0x1u) != 0u) {
         return NS_DB_STATUS_FAIL;
     }
 
     uint32_t length = (uint32_t)strlen(data);
 
-//    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_WRPERR | FLASH_FLAG_PGERR);
 
     if (HAL_FLASH_Unlock() != HAL_OK) {
         return NS_DB_STATUS_FAIL;
     }
 
-    /* --- Önce hedef sayfayı sil --- */
     FLASH_EraseInitTypeDef erase = {0};
     uint32_t page_error = 0;
-
-//    erase.TypeErase   = FLASH_TYPEERASE_PAGES;
-//    erase.PageAddress = address & ~(FLASH_PAGE_SIZE - 1);  // sayfa başlangıcı
-//    erase.NbPages     = 1;
 
     if (HAL_FLASHEx_Erase(&erase, &page_error) != HAL_OK) {
         (void)HAL_FLASH_Lock();
         return NS_DB_STATUS_WRITE_FAIL;
     }
 
-    /* --- Yeni veriyi yaz --- */
     for (uint32_t i = 0; i < length; i += 2u)
     {
         uint32_t dst = address + i;
@@ -60,7 +53,7 @@ static NVS_DB_STATUS nvsdatabase_flashWriteCharData(uint32_t address, const char
         if ((i + 1u) < length) {
             half_word |= (uint16_t)((uint8_t)data[i + 1u] << 8);
         } else {
-            half_word |= (uint16_t)(0xFFu << 8); // padding
+            half_word |= (uint16_t)(0xFFu << 8);
         }
 
         if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, dst, half_word) != HAL_OK)
@@ -79,7 +72,7 @@ static NVS_DB_STATUS nvsdatabase_flashWriteCharData(uint32_t address, const char
        uint32_t term_addr = address + length;
 
        if ((term_addr & 0x1u) != 0u) {
-           term_addr++; // half-word hizası
+           term_addr++;
        }
 
        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, term_addr, term_hw) != HAL_OK) {
@@ -103,7 +96,7 @@ NVS_DB_STATUS nvsdatabase_flashReadCharData(uint32_t address, char *buffer, uint
     if (buffer == NULL || maxLength == 0) {
         return NS_DB_STATUS_READ_FAIL;
     }
-    if ((address & 0x1u) != 0u) { // hizalama kontrolü
+    if ((address & 0x1u) != 0u) {
         return NS_DB_STATUS_READ_FAIL;
     }
 
@@ -111,19 +104,19 @@ NVS_DB_STATUS nvsdatabase_flashReadCharData(uint32_t address, char *buffer, uint
     uint32_t len_read = 0;
     bool done = false;
 
-    while (i < (maxLength - 1)) // sonuna '\0' için yer bırak
+    while (i < (maxLength - 1))
     {
         uint16_t half_word = *(volatile uint16_t *)(address + i);
 
         buffer[i]     = (char)(half_word & 0xFF);
         buffer[i + 1] = (char)((half_word >> 8) & 0xFF);
 
-        if (buffer[i] == '\0') {             // terminator ilk byte'ta
+        if (buffer[i] == '\0') {
             len_read = i;
             done = true;
             break;
         }
-        if (buffer[i + 1] == '\0') {         // terminator ikinci byte'ta
+        if (buffer[i + 1] == '\0') {
             len_read = i + 1;
             done = true;
             break;
@@ -134,14 +127,11 @@ NVS_DB_STATUS nvsdatabase_flashReadCharData(uint32_t address, char *buffer, uint
 
     if (!done) {
         buffer[maxLength - 1] = '\0';
-        // Güvenli uzunluk (terminator bulunmadıysa)
         len_read = (uint32_t)strnlen(buffer, maxLength - 1);
     }
 
-    /* ---- LOG: okunan veriyi güvenli yazdır ---- */
     {
-        // Bounded & sanitize
-        char dbg[NS_DB_PASS_MAX + 1] = {0}; // en büyük alan için yeterli buffer
+        char dbg[NS_DB_PASS_MAX + 1] = {0};
         uint32_t copy_len = len_read;
         if (copy_len > NS_DB_PASS_MAX) copy_len = NS_DB_PASS_MAX;
 
@@ -165,7 +155,6 @@ static bool nvsesp_jsonFindString(const char *json, const char *key, char *out, 
 {
     if (!json || !key || !out || maxLen == 0) return false;
 
-    /* "key":" dizisini bul */
     char pat[32];
     int n = snprintf(pat, sizeof(pat), "\"%s\":\"", key);
     if (n <= 0 || (size_t)n >= sizeof(pat)) return false;
@@ -173,24 +162,18 @@ static bool nvsesp_jsonFindString(const char *json, const char *key, char *out, 
     const char *p = strstr(json, pat);
     if (!p) return false;
 
-    p += strlen(pat);  /* değer başlangıcı */
+    p += strlen(pat);
 
-    /* Sonraki çift tırnağa kadar kopyala */
     size_t i = 0;
     while (*p && *p != '"' && i + 1 < maxLen) {
         out[i++] = *p++;
     }
     out[i] = '\0';
-
-    /* Kapanış tırnak yoksa/geçersizse başarısız say */
     if (*p != '"') return false;
 
     return (i > 0);
 }
 
-/* =========================
- * SSID & Password parser
- * ========================= */
 static bool nvsesp_parseJsonCredentials(const char *json,
                                         char *ssidOut, size_t ssidMax,
                                         char *passOut, size_t passMax)
@@ -203,31 +186,21 @@ static bool nvsesp_parseJsonCredentials(const char *json,
     if (!nvsesp_jsonFindString(json, "ssid", ssid, sizeof(ssid))) return false;
     if (!nvsesp_jsonFindString(json, "password", pass, sizeof(pass))) return false;
 
-    /* Limit kontrolü (fazlasını kes) */
     strncpy(ssidOut, ssid, ssidMax - 1);  ssidOut[ssidMax - 1] = '\0';
     strncpy(passOut, pass, passMax - 1);  passOut[passMax - 1] = '\0';
 
     return true;
 }
 
-/* =========================
- * KAMU API: nvsdatabase_validate
- *  - Bayrağı kontrol eder
- *  - JSON’dan ssid/password parse eder
- *  - databaseHandle içine yazar
- *  - credentialsReady = true yapar
- * ========================= */
 NVS_DB_STATUS nvsdatabase_validate(void)
 {
     if (!databaseHandle.databaseApModeGetJSON)
-        return NS_DB_STATUS_FAIL;  /* yeni JSON yok */
+        return NS_DB_STATUS_FAIL;
 
-    /* Bayrağı tüket (tek seferlik) */
     __disable_irq();
     databaseHandle.databaseApModeGetJSON = false;
     __enable_irq();
 
-    /* Parse et */
     char ssid[NS_DB_SSID_MAX + 1] = {0};
     char pass[NS_DB_PASS_MAX + 1] = {0};
 
@@ -235,7 +208,6 @@ NVS_DB_STATUS nvsdatabase_validate(void)
                                     ssid, sizeof(ssid),
                                     pass, sizeof(pass)))
     {
-        /* Sonucu databaseHandle’a koy */
         strncpy(databaseHandle.ssid, ssid, sizeof(databaseHandle.ssid) - 1);
         strncpy(databaseHandle.pass, pass, sizeof(databaseHandle.pass) - 1);
 
@@ -244,12 +216,10 @@ NVS_DB_STATUS nvsdatabase_validate(void)
         logInfo("DB INFO: Parsed credentials (ssid='%s', pass_len=%u)\n",
                      databaseHandle.ssid, (unsigned)strlen(databaseHandle.pass));
 
-        /* --- Flash’a yaz --- */
         NVS_DB_STATUS ws = nvsdatabase_flashWriteCharData(NS_DB_FLASH_SSID_ADDR, databaseHandle.ssid);
         NVS_DB_STATUS wp = nvsdatabase_flashWriteCharData(NS_DB_FLASH_PASS_ADDR, databaseHandle.pass);
 
         if (ws == NS_DB_STATUS_WRITE_OK && wp == NS_DB_STATUS_WRITE_OK) {
-            /* Flash'tan geri oku */
             char ssid_verify[NS_DB_SSID_MAX + 1] = {0};
             char pass_verify[NS_DB_PASS_MAX + 1] = {0};
             __disable_irq();
@@ -283,7 +253,4 @@ NVS_DB_STATUS nvsdatabase_validate(void)
         return NS_DB_STATUS_FAIL;
     }
 }
-
-
-
 

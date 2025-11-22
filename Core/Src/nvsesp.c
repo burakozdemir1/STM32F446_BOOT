@@ -25,7 +25,7 @@ int nvsesp_parseVersionJson(const char *rxBuffer)
     if (jsonStart) {
         jsonStart += strlen("{\"version\":\"");
 
-        char versionStr[4] = {0};  // Maks 3 basamaklı versiyon
+        char versionStr[4] = {0};
         int i = 0;
         while (jsonStart[i] && jsonStart[i] != '"' && i < sizeof(versionStr) - 1) {
             versionStr[i] = jsonStart[i];
@@ -56,7 +56,6 @@ NVS_ESP_STATUS nvsesp_httpRequest(void)
 	      "Connection: close\r\n"
 	      "\r\n");
 
-	  // AT+CIPSEND ile uzunluğu bildir
 	  char cipSendCmd[32];
 	  sprintf(cipSendCmd, "AT+CIPSEND=0,%d", strlen(httpRequest));
 		ESP_Handle_t espWifi;
@@ -103,7 +102,6 @@ NVS_ESP_STATUS nvsesp_httpRequest(void)
 		if(nvsesp_parseVersionJson((char*)espWifi.rxBuffer)!=12)
 		{
 			logInfo("BL DEBUG: Updating...\n");
-			//nvsesp_sendAtCommand("AT+CIPSTART=0,\"TCP\",\"burakozdemir1.pythonanywhere.com\",80", 2000);
 			if(nvsesp_sendAtCommand("AT+CIPSTART=0,\"TCP\",\"burakozdemir1.pythonanywhere.com\",80", 2000)!=NS_ESP_STATUS_SUCCESS)
 			{
 				logInfo("BL DEBUG MSG: ESP CIPSTART failed!\n");
@@ -114,8 +112,6 @@ NVS_ESP_STATUS nvsesp_httpRequest(void)
 				logInfo("BL DEBUG MSG: ESP CIPSTART success.\n");
 		        espStatus = NS_ESP_STATUS_SUCCESS;
 		        ATisOK = 1;
-//				ESP8266_GetFirmwareMetadata(&totalBlocks);
-//				ESP8266_RequestFirmware(&totalBlocks); // başarılı olması durumunda sistemi resetlemesi için json da bir değişkeni set et ve app koduna geçildiğinde
 			}
 
 
@@ -323,12 +319,11 @@ NVS_ESP_STATUS nvsesp_sendAtCommand(const char *cmd, uint32_t timeoutMs)
 	NVS_ESP_HANDLE espHandle;
 	NVS_ESP_STATUS espStatus = NS_ESP_STATUS_FAIL;
 	uint8_t ATisOK = 0;
-	uint8_t failCount = 0; // Eklenen sayaç
+	uint8_t failCount = 0;
 	espHandle.timeout = timeoutMs;
 	memset(espHandle.ATcommand, 0, sizeof(espHandle.ATcommand));
 
 	while (!ATisOK) {
-		// Eğer 5 denemeden fazla olduysa çık
 		if (failCount >= 5) {
 			logInfo("BL ERROR: Too many failed attempts, exiting...\n");
 			break;
@@ -366,7 +361,7 @@ NVS_ESP_STATUS nvsesp_sendAtCommand(const char *cmd, uint32_t timeoutMs)
 			char msg[160];
 			snprintf(msg, sizeof(msg), "BL ERROR: Transmit failed for cmd: %s\n", cmd);
 			logInfo(msg);
-			failCount++; // Başarısız deneme sayısını artır
+			failCount++;
 		}
 	}
 
@@ -379,7 +374,6 @@ NVS_ESP_STATUS nvsesp_sendAtCommand(const char *cmd, uint32_t timeoutMs)
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
-	/*ISR Fonksiyonlarında Log yapma!!!*/
     if (huart->Instance == USART1)
     {
         uint16_t n = (Size < NS_AP_LOG_COPY_MAX) ? Size : NS_AP_LOG_COPY_MAX;
@@ -393,22 +387,10 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     }
 }
 
-
-
-
-/* Gelen +IPD/HTTP verisinden JSON gövdeyi çıkarır.
- * data,len: UART’tan alınan ham chunk
- * jsonOut: JSON metnini yazacağımız buffer
- * jsonOutSize: jsonOut kapasitesi
- * Dönüş: true -> JSON başarıyla kopyalandı, false -> bulunamadı/eksik/taştı
- *
- * Örnek beklenen çıktı: {"ssid":"burakozdemir55","password":"854321"}
- */
 bool nvsesp_extractJsonBody(const uint8_t *data, uint16_t len, char *jsonOut, uint16_t jsonOutSize)
 {
     if (!data || !jsonOut || jsonOutSize < 3) return false;
 
-    /* 1) HTTP header sonunu bul: "\r\n\r\n" */
     int hdrEnd = -1;
     for (uint16_t i = 0; i + 3 < len; i++) {
         if (data[i] == '\r' && data[i+1] == '\n' && data[i+2] == '\r' && data[i+3] == '\n') {
@@ -417,11 +399,10 @@ bool nvsesp_extractJsonBody(const uint8_t *data, uint16_t len, char *jsonOut, ui
         }
     }
 
-    /* 2) Header varsa Content-Length'i header içinde ara (case-insensitive) */
     int contentLen = -1;
     if (hdrEnd > 0) {
         const char *needle = "content-length:";
-        int nlen = 15; /* "content-length:" */
+        int nlen = 15;
         for (int i = 0; i + nlen <= hdrEnd; i++) {
             int k = 0;
             while (k < nlen) {
@@ -432,10 +413,8 @@ bool nvsesp_extractJsonBody(const uint8_t *data, uint16_t len, char *jsonOut, ui
                 k++;
             }
             if (k == nlen) {
-                /* Sayıya kadar boşlukları atla */
                 int p = i + nlen;
                 while (p < hdrEnd && (data[p] == ' ' || data[p] == '\t')) p++;
-                /* Sayıyı oku */
                 int v = 0, ok = 0;
                 while (p < hdrEnd && data[p] >= '0' && data[p] <= '9') {
                     ok = 1; v = v*10 + (data[p]-'0'); p++;
@@ -446,7 +425,6 @@ bool nvsesp_extractJsonBody(const uint8_t *data, uint16_t len, char *jsonOut, ui
         }
     }
 
-    /* 3) Content-Length varsa gövdeyi tam kopyala */
     if (hdrEnd > 0 && contentLen >= 0) {
         int bodyAvail = (int)len - hdrEnd;
         if (bodyAvail >= contentLen && contentLen < (int)jsonOutSize) {
@@ -454,10 +432,8 @@ bool nvsesp_extractJsonBody(const uint8_t *data, uint16_t len, char *jsonOut, ui
             jsonOut[contentLen] = '\0';
             return true;
         }
-        /* Eksik veya sığmıyor: fallback'e geç */
     }
 
-    /* 4) Fallback: chunk içinde JSON'ı { ... } aralığıyla yakala */
     int start = -1, stop = -1;
     for (uint16_t i = 0; i < len; i++) {
         if (data[i] == '{') { start = (int)i; break; }
@@ -476,7 +452,6 @@ bool nvsesp_extractJsonBody(const uint8_t *data, uint16_t len, char *jsonOut, ui
         }
     }
 
-    /* Bulunamadı */
     if (jsonOutSize) jsonOut[0] = '\0';
     return false;
 }
@@ -497,7 +472,6 @@ bool nvsesp_jsonFindString(const char *json, const char *key, char *out, size_t 
 static void nvsesp_joinFeed(const char* chunk, uint16_t len) {
     if (!apModeGetData.joinPending || len == 0) return;
 
-    // Chunk’ı bounded şekilde joinBuf’a ekle
     uint16_t space = sizeof(apModeGetData.joinBuf) - 1 - apModeGetData.joinBufLen;
     if (space > 0) {
         uint16_t copy = (len < space) ? len : space;
@@ -506,22 +480,17 @@ static void nvsesp_joinFeed(const char* chunk, uint16_t len) {
         apModeGetData.joinBuf[apModeGetData.joinBufLen] = '\0';
     }
 
-    // Anahtar kelimeleri ara
     const char* s = apModeGetData.joinBuf;
 
-    // Başarı işaretleri
     bool hasConnected = (strstr(s, "WIFI CONNECTED") != NULL);
     bool hasGotIp     = (strstr(s, "WIFI GOT IP")   != NULL) || (strstr(s, "GOT IP") != NULL);
     bool hasOk        = (strstr(s, "\r\nOK\r\n")    != NULL) || (strstr(s, "\nOK\n") != NULL) || (strstr(s, "OK\r\n") != NULL);
 
-    // Hata işaretleri
     bool hasFail      = (strstr(s, "\r\nFAIL\r\n")  != NULL) || (strstr(s, "FAIL") != NULL);
     bool hasError     = (strstr(s, "\r\nERROR\r\n") != NULL) || (strstr(s, "ERROR") != NULL);
 
-    // +CWJAP:x hata kodu (1..6 gibi)
     bool hasCwjapErr  = (strstr(s, "+CWJAP:") != NULL);
 
-    // Karar
     if (hasGotIp || (hasConnected && hasOk)) {
         apModeGetData.joinSuccess = true;
         apModeGetData.joinPending = false;
@@ -529,7 +498,6 @@ static void nvsesp_joinFeed(const char* chunk, uint16_t len) {
         apModeGetData.joinFailed  = true;
         apModeGetData.joinPending = false;
     } else {
-        // Hâlâ bekliyoruz; timeout kontrolünü dışarıda yapacağız.
     }
 }
 void nvsesp_apModeGetData(void)
@@ -540,7 +508,7 @@ void nvsesp_apModeGetData(void)
         apModeGetData.g_rx_ready = false;
         __enable_irq();
 
-        apModeGetData.ssidPassFound = false; // Her çağrıda önce sıfırla
+        apModeGetData.ssidPassFound = false;
 
         if (nvsesp_extractJsonBody(apModeGetData.g_log_buf, sz, apModeGetData.jsonBuf, sizeof(apModeGetData.jsonBuf))) {
         	logInfo("Extracted JSON:\n");
@@ -566,7 +534,6 @@ void nvsesp_apModeGetData(void)
             	logInfo("No password found!\n");
             }
 
-            // ----> İki veri de geldiyse
             if (foundSsid && foundPassword) {
                 apModeGetData.ssidPassFound = true;
             }
@@ -587,16 +554,16 @@ void nvsesp_apModeGetDataInit(void)
 	  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, apModeGetData.RxData, NS_AP_UART_DMA_RX_SIZE);
 	  __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 }
-// Ekrana okunur ASCII (printable) göster: okunmayanları '.' yap
+
 void log_ascii_chunked(const uint8_t *data, uint16_t len)
 {
-    char line[80];  // tek çağrıda en fazla ~78 karakter bas
+    char line[80];
     int pos = 0;
 
     for (uint16_t i = 0; i < len; i++) {
         char c = (data[i] >= 32 && data[i] <= 126) ? (char)data[i] : '.';
         line[pos++] = c;
-        if (pos >= 78) { // satırı kır
+        if (pos >= 78) {
             line[pos++] = '\n';
             line[pos] = 0;
             logInfo(line);
@@ -628,5 +595,4 @@ void log_hex_chunked(const uint8_t *data, uint16_t len)
         i += chunk;
     }
 }
-
 
